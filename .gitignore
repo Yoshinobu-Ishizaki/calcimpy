@@ -102,3 +102,4 @@ ENV/
 
 # VSCode data
 .DS_Store
+.vscode/
