@@ -103,3 +103,6 @@ ENV/
 # VSCode data
 .DS_Store
 .vscode/
+
+# png
+*.png
