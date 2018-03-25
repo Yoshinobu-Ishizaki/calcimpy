@@ -18,8 +18,8 @@ class Men(object):
         self.next = next # next Men
         self.prev = prev # prev Men
         self.sidename = sidename # name of side men for searching later.
-        self.side = side # side Men ( SPLIT, JOIN, TONEHOLE )
-        self.sidetype = sidetype #SPLIT,JOIN,TONEHOLE ...
+        self.side = side # side Men ( BRANCH, MERGE, TONEHOLE )
+        self.sidetype = sidetype #BRANCH,MERGE,TONEHOLE ...
         self.sideratio = sideratio # 断面接続係数
         # 後で計算される
         self.p0 = 0 # 入口(マウスピース側)音圧
@@ -33,14 +33,20 @@ class Men(object):
     def append(self, next = None):
         """Append next Men to this."""
         self.next = next
-        self.next.setprev(self)
+        self.next.prepend(self)
 
-    def setprev(self, prev = None):
+    def prepend(self, prev = None):
         """Set prev Men."""
         self.prev = prev
     
+    def setside(self, side = None):
+        self.side = side
+        side.side = self
+        
     def get_fbr(self):
         return self.df, self.db, self.r 
 
     def __str__(self):
         return '%g,%g,%g,%s' % (self.df, self.db, self.r, self.group)
+
+            

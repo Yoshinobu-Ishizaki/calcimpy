@@ -6,13 +6,19 @@ WIIIのファイル表現とデータそのものの間を取り持つController
 単独でシェルから呼び出されると、コマンドラインプログラムとしても機能する。
 """
 
-#from wiii_core import *
-#from math import *
+import re
+# import numpy as np
+import xmensur as xmn
 
 # 予約語
-# SPLIT = VALVE_OUT, JOIN = VALVE_IN, BRANCH = TONEHOLE
-keywords = ('SPLIT', 'VALVE_OUT', 'JOIN', 'VALVE_IN', 'TONEHOLE', 'BRANCH', 'OPEN_END', 'CLOSED_END',
-            'MAIN', 'END_MAIN', 'GROUP', 'END_GROUP')
+# BRANCH = VALVE_OUT, MERGE = VALVE_IN, SPLIT = TONEHOLE
+# Aliases
+# < = BRANCH, > MERGE, | = SPLIT
+# [ = MAIN, ] = END_MAIN
+# { = GROUP, } = END_GROUP
+
+type_keywords = ('SPLIT', 'VALVE_OUT', 'MERGE', 'VALVE_IN', 'TONEHOLE', 'BRANCH', 'OPEN_END', 'CLOSED_END')
+group_keywords = ('MAIN', 'END_MAIN', 'GROUP', 'END_GROUP', '[', ']', '<', '>', '|', '{', '}')
 
 # デフォルト変数。
 OPEN = 1
@@ -52,72 +58,65 @@ def resolve_vars( lst ):
         v.append(f)
     return v
 
-def men_by_kwd( lst ):
+def men_by_kwd( cur, lst ):
     """
-    Handle SPLIT, JOINT, TONEHOLE,...
+    Handle BRANCH, MERGE, TONEHOLE,...
     Returns new Men item.
     """
     key = lst[0]
     if len(lst) > 2:
         name, ratio = lst[1:3]
-    lastmen = mensur[-1]
-    gp = group_tree[-1]
-    df,db,r = lastmen.get_fbr()
+
+    df,db,r = cur.get_fbr()
+    gp = cur.group
 
     men = None
     
-    if key == 'SPLIT' or key == 'VALVE_OUT':
-        men = Men( db, db, 0, gp, sidename = name, sidetype = 'SPLIT', sideratio = ratio )
-    elif key == 'JOIN' or key =='VALVE_IN':
-        men = Men( db, db, 0, gp, sidename = name, sidetype = 'JOIN', sideratio = ratio )
-    elif key == 'BRANCH' or key == 'TONEHOLE':
-        men = Men( db, db, 0, gp, sidename = name, sidetype = 'BRANCH', sideratio = ratio )
+    if key == 'BRANCH' or key == 'VALVE_OUT' or key == '<':
+        men = xmn.Men( db, db, 0, gp, sidename = name, sidetype = 'BRANCH', sideratio = ratio )
+    elif key == 'MERGE' or key =='VALVE_IN' or key == '>':
+        men = xmn.Men( db, db, 0, gp, sidename = name, sidetype = 'MERGE', sideratio = ratio )
+    elif key == 'SPLIT' or key == 'TONEHOLE' or key == '|':
+        men = xmn.Men( db, db, 0, gp, sidename = name, sidetype = 'SPLIT', sideratio = ratio )
     elif key == 'OPEN_END':
-        men = Men( db, db, 0 , gp )
+        men = xmn.Men( db, db, 0 , gp )
     elif key == 'CLOSED_END':
-        men = Men( db, 0, 0, gp )
+        men = xmn.Men( db, 0, 0, gp )
     else:
         pass
     
     if men :
-        lastmen.append(men)
+        cur.append(men)
 
     return men
 
-def find_grp_end_mensur( name, end = HEAD ):
-    for m in mensur:
-        if m.group == name:
-            if end == HEAD:
-                if m.prev == None:
-                    return m
-                elif m.prev.group != name:
-                    return m
-            if end == LAST:
-                if m.next == None:
-                    return m
-                elif m.next.group != name:
-                    return m
-    else:
-        return None
 
+def top_mensur(men):
+    if men:
+        while men.prev:
+            men = men.prev
+    return men
 
-def update_men_group():
-    """Updates Group Table for Mensur"""
-    for gnm in group_names:
-        men = find_grp_end_mensur(gnm)
-        men_grp_table[gnm] = men
-
-    men_grp_table['MAIN'] = mensur[0] # kore ha tokubetsu
+def end_mensur(men):
+    if men:
+        while men.next:
+            men = men.next
+    return men
 
 def resolve_child_mensur():
     """Connect side mensur to Main"""
-    for m in mensur:
-        if len(m.sidename) > 0:
-            if m.sidetype == 'JOIN':
-                ms = find_grp_end_mensur(m.sidename, LAST)
+    men = men_grp_table['MAIN'] # top mensur cell
+
+    while men:
+        if men.sidename != '':
+            if men.sidetype != 'MERGE':
+                ms = men_grp_table[men.sidename]
             else:
-                ms = find_grp_end_mensur(m.sidename, HEAD)
-            m.side = ms
+                ms = end_mensur(men_grp_table[men.sidename])
+
+            men.setside(ms)
+        
+        men = men.next
             
 def clear_mensur():
     """Cleans all global mensur list, table"""
@@ -131,50 +130,59 @@ def build_mensur( lines ):
     """Parse text lines which read from mensur file,
     then build mensur objects.
     """
+    cur = None # current mensur cell 
+    gnm = '' # current group name
+
+    spcrm = re.compile(r'[\t\s]+') # remove all spaces and tabs
+
     for ln in lines:
         s = eat_comment(ln.rstrip())
-        if len(s) == 0:
+        # remove whitespaces
+        ss = spcrm.sub('',s)
+        if len(ss) == 0:
             continue # ignore blank line
 
-        # remove whitespaces
-        ss = s.strip()
+        wd = ss.split(',')
         # is it var def ?
-        if '=' in ss:
-            exec(ss, globals()) # execute as python code, so that setting vars et al.
+        if '=' in wd[0]:
+            exec(wd[0], globals()) # execute as python code, so that setting vars et al.
             continue
 
         # it is command or normal DF,DB,R
-        wd = ss.split(',')
-        if wd[0] in keywords:
-            if wd[0] == 'GROUP' or wd[0] == 'MAIN':
-                if wd[0] == 'MAIN':
-                    gn = 'MAIN'
-                else:
-                    gn = wd[1]
-                assert (not gn in group_names), "group name %s is doubling" % gn # group name must be unique
-                group_names.append( gn )
-                group_tree.append( gn )
-                continue
-            
-            elif wd[0] == 'END_GROUP' or wd[0] == 'END_MAIN':
+        if wd[0] in group_keywords:
+            if wd[0] == 'END_MAIN' or wd[0] == ']':
+                group_tree = []
+                cur = None 
+            elif wd[0] == 'END_GROUP' or wd[0] == '}':
                 group_tree.pop()
-                continue
             else:
-                # other SPLIT, TONEHOLE, ...
-                men = men_by_kwd(wd)
+                if wd[0] == 'MAIN' or wd[0] == '[':
+                    gnm = 'MAIN'
+                    group_tree = [gnm]
+                elif wd[0] == 'GROUP' or wd[0] == '{':
+                    group_tree.append(wd[1])
+                    gnm = ':'.join(group_tree) # nested groups are connected by :                
+                assert (not gnm in group_names), "group name %s is doubling" % gn # group name must be unique
+                group_names.append( gnm )
         else:
-            # normal df,db,r,cmt line
-            df,db,r = resolve_vars( wd[:3] ) # only df,db,r 
-            men = Men( df,db,r, group = group_tree[-1] ) # create men 
-            
-        if men != None:
-            if len(mensur) :
-                lastmen = mensur[-1]
-                lastmen.append( men )
-            mensur.append(men)
+            if wd[0] in type_keywords:
+                # BRANCH, MERGE, SPLIT, etc...
+                cur = men_by_kwd(cur,wd)
+            else:
+                # normal df,db,r,cmt line
+                df,db,r = resolve_vars( wd[:3] ) # only df,db,r 
+                men = xmn.Men( df,db,r, group = gnm ) # create men 
+
+                if not cur:
+                    if group_tree[0] == 'MAIN':
+                        men_grp_table['MAIN'] = men
+                    else:
+                        men_grp_table[gnm] = men
+                    cur = men
+                else:
+                    cur.append(men)
+                    cur = men
         
-    # update group talble
-    update_men_group()
     # now resolve childs
     resolve_child_mensur()
 
@@ -197,20 +205,15 @@ if __name__ == "__main__" :
     lines = fd.readlines()
     fd.close()
 
-    try:
-        mtop = build_mensur( lines )
-    except AssertionError , msg :
-        print msg 
-
-    #debug
-    #for m in mensur:
-        #print m.get_fbr()
-        #print m
-
-    m = mtop
-    while( m ):
-        print m
+    mentop = build_mensur( lines )
+ 
+    m = mentop
+    while m:
+        print(m)
         m = m.next
 
-    
-    print men_grp_table
+    # debug
+    print('mensur table')
+    for m in men_grp_table:
+       print(men_grp_table[m])
+
