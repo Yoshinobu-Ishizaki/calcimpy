@@ -17,8 +17,8 @@ import xmensur as xmn
 # [ = MAIN, ] = END_MAIN
 # { = GROUP, } = END_GROUP
 
-type_keywords = ('SPLIT', 'VALVE_OUT', 'MERGE', 'VALVE_IN', 'TONEHOLE', 'BRANCH', 'OPEN_END', 'CLOSED_END')
-group_keywords = ('MAIN', 'END_MAIN', 'GROUP', 'END_GROUP', '[', ']', '<', '>', '|', '{', '}')
+type_keywords = ('SPLIT', 'VALVE_OUT', 'MERGE', 'VALVE_IN', 'TONEHOLE', 'BRANCH','OPEN_END', 'CLOSED_END', '<', '>', '|')
+group_keywords = ('MAIN', 'END_MAIN', 'GROUP', 'END_GROUP', '[', ']', '{', '}')
 
 # デフォルト変数。
 OPEN = 1
@@ -65,7 +65,8 @@ def men_by_kwd( cur, lst ):
     """
     key = lst[0]
     if len(lst) > 2:
-        name, ratio = lst[1:3]
+        name = lst[1]
+        ratio = resolve_vars(lst[2:3])[0]
 
     df,db,r = cur.get_fbr()
     gp = cur.group
@@ -117,7 +118,21 @@ def resolve_child_mensur():
             men.setside(ms)
         
         men = men.next
-            
+
+def print_mensur(men):
+    while men:
+        print(men) # output __str__
+        if men.side:
+            if men.sidetype != 'MERGE' and men.sideratio > HALF:
+                men = men.side
+            elif not men.next: # branch end
+                men = men.side
+            else:
+                men = men.next
+        else:
+            men = men.next
+
+
 def clear_mensur():
     """Cleans all global mensur list, table"""
     del mensur[:]
@@ -150,11 +165,14 @@ def build_mensur( lines ):
 
         # it is command or normal DF,DB,R
         if wd[0] in group_keywords:
+            #print(wd)
             if wd[0] == 'END_MAIN' or wd[0] == ']':
                 group_tree = []
                 cur = None 
             elif wd[0] == 'END_GROUP' or wd[0] == '}':
                 group_tree.pop()
+                if not len(group_tree):
+                    cur = None
             else:
                 if wd[0] == 'MAIN' or wd[0] == '[':
                     gnm = 'MAIN'
@@ -162,7 +180,7 @@ def build_mensur( lines ):
                 elif wd[0] == 'GROUP' or wd[0] == '{':
                     group_tree.append(wd[1])
                     gnm = ':'.join(group_tree) # nested groups are connected by :                
-                assert (not gnm in group_names), "group name %s is doubling" % gn # group name must be unique
+                assert (not gnm in group_names), "group name %s is doubling" % gnm # group name must be unique
                 group_names.append( gnm )
         else:
             if wd[0] in type_keywords:
@@ -177,12 +195,17 @@ def build_mensur( lines ):
                     if group_tree[0] == 'MAIN':
                         men_grp_table['MAIN'] = men
                     else:
+                        # print(gnm)
                         men_grp_table[gnm] = men
                     cur = men
                 else:
                     cur.append(men)
                     cur = men
-        
+    
+    # debug
+    # print(men_grp_table)
+    # print(group_names)
+
     # now resolve childs
     resolve_child_mensur()
 
@@ -207,13 +230,10 @@ if __name__ == "__main__" :
 
     mentop = build_mensur( lines )
  
-    m = mentop
-    while m:
-        print(m)
-        m = m.next
-
+    print_mensur(mentop)
+    
     # debug
-    print('mensur table')
-    for m in men_grp_table:
-       print(men_grp_table[m])
+    # print('mensur table')
+    # for m in men_grp_table:
+    #    print(men_grp_table[m])
 
