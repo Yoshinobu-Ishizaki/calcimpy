@@ -4,8 +4,7 @@ test program to show various calculation result of xmensur
 '''
 __version__ = '0.1'
 
-import xmensur
-import xmenParser as prs
+import xmensur as xmn
 import xmenCalc
 
 import argparse
@@ -38,7 +37,7 @@ if __name__ == "__main__" :
         lines = fd.readlines()
         fd.close()
 
-        mentop = prs.build_mensur( lines )
+        mentop = xmn.build_mensur( lines )
     
         # set calculation conditions
         xmenCalc.set_params(temperature = float(args.temperature), minfreq = float(args.minfreq), \
@@ -47,12 +46,12 @@ if __name__ == "__main__" :
         print(xmenCalc.get_params())
 
         if args.print_mensur:
-            prs.print_mensur(mentop)
+            xmn.print_mensur(mentop)
         
         if args.calculation == 'II':
             pass
         elif args.calculation == 'RI':
-            men = prs.end_mensur(mentop)
+            men = xmn.end_mensur(mentop)
             dia = men.df
             # print(dia)
             nn = (xmenCalc._Mf - xmenCalc._mf)/xmenCalc._sf + 1
