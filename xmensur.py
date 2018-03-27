@@ -47,6 +47,6 @@ class Men(object):
         return self.df, self.db, self.r 
 
     def __str__(self):
-        return '%g,%g,%g,%s' % (self.df, self.db, self.r, self.group)
+        return '%g,%g,%g,%s' % (self.df*1000, self.db*1000, self.r*1000, self.group)
 
             

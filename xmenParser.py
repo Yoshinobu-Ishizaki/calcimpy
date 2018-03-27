@@ -189,7 +189,7 @@ def build_mensur( lines ):
             else:
                 # normal df,db,r,cmt line
                 df,db,r = resolve_vars( wd[:3] ) # only df,db,r 
-                men = xmn.Men( df,db,r, group = gnm ) # create men 
+                men = xmn.Men( df*0.001,db*0.001,r*0.001, group = gnm ) # create men 
 
                 if not cur:
                     if group_tree[0] == 'MAIN':
