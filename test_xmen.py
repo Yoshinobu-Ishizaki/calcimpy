@@ -44,7 +44,7 @@ if __name__ == "__main__" :
         xmenCalc.set_params(temperature = float(args.temperature), minfreq = float(args.minfreq), \
         maxfreq = float(args.maxfreq), stepfreq = float(args.stepfreq) )
 
-        # print(xmenCalc.get_params())
+        print(xmenCalc.get_params())
 
         if args.print_mensur:
             prs.print_mensur(mentop)
@@ -52,8 +52,11 @@ if __name__ == "__main__" :
         if args.calculation == 'II':
             pass
         elif args.calculation == 'RI':
+            men = prs.end_mensur(mentop)
+            dia = men.df
+            # print(dia)
             nn = (xmenCalc._Mf - xmenCalc._mf)/xmenCalc._sf + 1
             ff = np.linspace(xmenCalc._mf, xmenCalc._Mf,nn, endpoint=True)
             for f in ff:
-                imp = xmenCalc.radimp(0.25,f,args.radiation)
+                imp = xmenCalc.radimp(dia,f,args.radiation)
                 print(f,',',np.real(imp),',',np.imag(imp))

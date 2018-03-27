@@ -23,6 +23,7 @@ _nu = _mu/_rho # dynamic viscous constant
 
 def set_params( temperature, minfreq, maxfreq, stepfreq ):
     '''set parameter and update some constants'''
+    global _tp, _mf,_Mf,_sf,_rad,_c0,_rho,_rhoc0,_mu,_nu
     _tp = temperature
     _mf = minfreq
     _Mf = maxfreq
