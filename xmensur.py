@@ -14,21 +14,22 @@ class Men(object):
         self.df = df
         self.db = db
         self.r = r
-        self.group = group # グループ管理
+        self.group = group # 
         self.next = next # next Men
         self.prev = prev # prev Men
         self.sidename = sidename # name of side men for searching later.
         self.side = side # side Men ( BRANCH, MERGE, TONEHOLE )
         self.sidetype = sidetype #BRANCH,MERGE,TONEHOLE ...
-        self.sideratio = sideratio # 断面接続係数
-        # 後で計算される
-        self.p0 = 0 # 入口(マウスピース側)音圧
-        self.u0 = 0 # 入口(マウスピース側)体積速度
-        self.p1 = 0 # 出口(ベル側)音圧
-        self.u1 = 0 # 出口(ベル側)体積速度
-        self.xL = 0 # 入口位置でのメンズール全体先頭からの合計距離
-        # 次との断面積の接続係数
-        self.r_side = 1
+        self.sideratio = sideratio # side conection ratio
+        # below are calculated later
+        self.pi = 0 # pressure at input end
+        self.ui = 0 # volume verosity at input end
+        self.po = 0 # pressure at output end
+        self.uo = 0 # volume verosity at output end
+        self.zi = 0 # impedance at input end
+        self.zo = 0 # impedance at output end
+        self.xL = 0 # total length from 1st mensur
+        self.tm = np.zeros((2,2),dtype = complex) # transmission matrix
 
     def append(self, next = None):
         """Append next Men to this."""
@@ -142,6 +143,17 @@ def end_mensur(men):
         while men.next:
             men = men.next
     return men
+
+def joint_mensur(men):
+    '''joint point of mensur which is BRANCH type'''
+    if men.sidetype == 'BRANCH':
+        e = end_mensur(men.side)
+        if e.side and e.side.sidetype == 'MERGE':
+            return e.side
+        else:
+            return None
+    else:
+        return None
 
 def resolve_child_mensur():
     """Connect side mensur to Main"""

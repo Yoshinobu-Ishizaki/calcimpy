@@ -5,7 +5,7 @@ test program to show various calculation result of xmensur
 __version__ = '0.1'
 
 import xmensur as xmn
-import xmenCalc
+import imped
 
 import argparse
 
@@ -40,22 +40,32 @@ if __name__ == "__main__" :
         mentop = xmn.build_mensur( lines )
     
         # set calculation conditions
-        xmenCalc.set_params(temperature = float(args.temperature), minfreq = float(args.minfreq), \
-        maxfreq = float(args.maxfreq), stepfreq = float(args.stepfreq) )
+        imped.set_params(temperature = float(args.temperature), minfreq = float(args.minfreq), \
+        maxfreq = float(args.maxfreq), stepfreq = float(args.stepfreq), rad = args.radiation )
 
-        print(xmenCalc.get_params())
+        # print(imped.get_params())
 
         if args.print_mensur:
             xmn.print_mensur(mentop)
         
         if args.calculation == 'II':
-            pass
+            nn = (imped._Mf - imped._mf)/imped._sf + 1
+            ff = np.linspace(imped._mf, imped._Mf,nn, endpoint=True)
+            wff = np.pi*2*ff
+            s = mentop.df*mentop.df*np.pi/4 # section area 
+            for i in np.arange(nn,dtype = int):
+                imped.input_impedance(wff[i],mentop)
+                # output impedance density
+                print(ff[i],',',np.real(mentop.zi)*s,',',np.imag(mentop.zi)*s)
+                # print(ff[i])
+
         elif args.calculation == 'RI':
             men = xmn.end_mensur(mentop)
             dia = men.df
             # print(dia)
-            nn = (xmenCalc._Mf - xmenCalc._mf)/xmenCalc._sf + 1
-            ff = np.linspace(xmenCalc._mf, xmenCalc._Mf,nn, endpoint=True)
-            for f in ff:
-                imp = xmenCalc.radimp(dia,f,args.radiation)
+            nn = (imped._Mf - imped._mf)/imped._sf + 1
+            ff = np.linspace(imped._mf, imped._Mf,nn, endpoint=True)
+            wff = np.pi*2*ff
+            for wf in wff:
+                imp = imped.radimp(wf,dia)
                 print(f,',',np.real(imp),',',np.imag(imp))
