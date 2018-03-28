@@ -55,12 +55,16 @@ if __name__ == "__main__" :
             rt, ext = os.path.splitext(path)
             fout = open( rt + '.imp','w')
         else:
-            fout = fopen(args.output,'w') 
+            fout = open(args.output,'w') 
 
         sys.stdout = fout
         s = mentop.df*mentop.df*np.pi/4 # section area 
+        print('freq,imp.real,imp.imag,imp.mag')
         for i in np.arange(nn,dtype = int):
             # output impedance density
             imped.input_impedance(wff[i],mentop)
-            z = mentop.zi
-            print(ff[i],',',np.real(z)*s,',',np.imag(z)*s)
+            z = mentop.zi*s
+            if z != 0:
+                print(ff[i],',',np.real(z),',',np.imag(z),',',20*np.log10(np.abs(z)))
+            else:
+                print(ff[i],',0,0,0')

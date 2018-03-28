@@ -75,15 +75,16 @@ def transmission_matrix(men1, men2):
     '''calculate transmission matrix from men2 -> men1
     returns matrix'''
     if men2 == None:
-        men = end_mensur(men1)
+        men = xmensur.end_mensur(men1)
         men = men.prev
     else:
         men = men2
     
     m = np.eye(2,dtype = complex)
     while men != None and men != men1:
-        np.dot(men.tm,m)
+        m = np.dot(men.tm,m)
         men = men.prev
+    m = np.dot(men1.tm,m)
 
     return m
 
@@ -94,19 +95,20 @@ def child_impedance(wf,men):
         input_impedance(wf,men.child) # recursive call for input impedance
         if men.c_ratio == 0:
             men.zo = men.next.zi
-        elif men.c_ratio == 1:
-            men.zo = men.child.zi
         else:
-            z1 = men.child.zi / men.c_ratio
-            z2 = men.next.zi / (1-men.c_ratio)
-            z = z1*z2/(z1+z2)
+            z1 = men.child.zi / men.c_ratio # adjust blending ratio
+            z2 = men.next.zi
+            if z1 == 0 and z2 == 0:
+                z = 0
+            else:
+                z = z1*z2/(z1+z2)
             men.zo = z 
     elif men.c_type == 'BRANCH' and men.c_ratio > 0:
         # multiple tube connection
         input_impedance(wf,men.child)
         m = transmission_matrix(men.child,None)
 	    
-        jnt = joint_mensur(men)
+        jnt = xmensur.joint_mensur(men)
         n = transmission_matrix(men.next,jnt)
 
         # section area adjustment
@@ -122,8 +124,11 @@ def child_impedance(wf,men):
         n[1,0] *= men.c_ratio
 
         z2 = jnt.next.zi
-        z = (m[0,1]*n[0,1] + (m[0,1]*n[0,0] + m[0,0]*n[0,1])*z2)/ \
-        (m[1,1]*n[0,1] + m[0,1]*n[1,1] + ((m[0,1] + n[0,1])*(m[1,0] + n[1,0]) - (m[0,0] - n[0,0])*(m[1,1] - n[1,1]))*z2)
+        dv = (m[1,1]*n[0,1] + m[0,1]*n[1,1] + ((m[0,1] + n[0,1])*(m[1,0] + n[1,0]) - (m[0,0] - n[0,0])*(m[1,1] - n[1,1]))*z2)
+        if dv != 0:
+            z = (m[0,1]*n[0,1] + (m[0,1]*n[0,0] + m[0,0]*n[0,1])*z2)/ dv
+        else:
+            z = 0        
         men.zo = z
     elif men.c_type == 'ADDON' and men.c_ratio > 0:
         # this routine will not called until 'ADDON(LOOP)' type of connection is implemented 
@@ -139,7 +144,10 @@ def child_impedance(wf,men):
         else:
             z1 /= men.c_ratio
             z2 /= (1 - men.c_ratio)	
-            z = z1*z2/(z1+z2)
+            if z1 == 0 and z2 == 0:
+                z = 0
+            else:
+                z = z1*z2/(z1+z2)
             men.zo = z
 
 def calc_transmission(wf,men):
@@ -174,9 +182,11 @@ def calc_impedance(wf, men):
     '''calculate impedance and other data for a given mensur cell'''
     if men.child:
         child_impedance(wf,men)
+    elif men.next:
+        men.zo = men.next.zi
 
+    calc_transmission(wf,men) 
     if men.r > 0:
-        calc_transmission(wf,men) 
         men.zi = (men.tm[0,0]*men.zo + men.tm[0,1])/(men.tm[1,0]*men.zo + men.tm[1,1] ) 
     else:
         # length 0
@@ -191,8 +201,8 @@ def input_impedance(wf, men):
 
     cur = xmensur.end_mensur(men)
     # end impedance
-    if cur.db > 0:
-        cur.zo = radimp(wf,cur.db)
+    if cur.df > 0:
+        cur.zo = radimp(wf,cur.df)
     else:
         # closed end 
         cur.zo = np.inf
