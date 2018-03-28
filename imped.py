@@ -88,60 +88,57 @@ def transmission_matrix(men1, men2):
     return m
 
 def child_impedance(wf,men):
-    '''handle impedance connection between side and current'''
-    if men.side == None:
-        return
-
-    if men.sidetype == 'SPLIT':
+    '''handle impedance connection between child and current'''
+    if men.c_type == 'SPLIT':
         # split (tonehole) type 
-        input_impedance(wf,men.side) # recursive call for input impedance
-        if men.sideratio == 0:
+        input_impedance(wf,men.child) # recursive call for input impedance
+        if men.c_ratio == 0:
             men.zo = men.next.zi
-        elif men.sideratio == 1:
-            men.zo = men.side.zi
+        elif men.c_ratio == 1:
+            men.zo = men.child.zi
         else:
-            z1 = men.side.zi / men.sideratio
-            z2 = men.next.zi / (1-men.sideratio)
+            z1 = men.child.zi / men.c_ratio
+            z2 = men.next.zi / (1-men.c_ratio)
             z = z1*z2/(z1+z2)
             men.zo = z 
-    elif men.sidetype == 'BRANCH' and men.sideratio > 0:
+    elif men.c_type == 'BRANCH' and men.c_ratio > 0:
         # multiple tube connection
-        input_impedance(wf,men.side)
-        m = transmission_matrix(men.side,None)
+        input_impedance(wf,men.child)
+        m = transmission_matrix(men.child,None)
 	    
         jnt = joint_mensur(men)
         n = transmission_matrix(men.next,jnt)
 
         # section area adjustment
-        if men.sideratio == 1:
+        if men.c_ratio == 1:
             m[0,1] = np.inf    
         else:
-            m[0,1] /= (1 - men.sideratio)
-        m[1,0] *= (1 - men.sideratio)
-        if men.sideratio == 0:
+            m[0,1] /= (1 - men.c_ratio)
+        m[1,0] *= (1 - men.c_ratio)
+        if men.c_ratio == 0:
             n[0,1] = np.inf
         else:
-            n[0,1] /= men.sideratio
-        n[1,0] *= men.sideratio
+            n[0,1] /= men.c_ratio
+        n[1,0] *= men.c_ratio
 
         z2 = jnt.next.zi
         z = (m[0,1]*n[0,1] + (m[0,1]*n[0,0] + m[0,0]*n[0,1])*z2)/ \
         (m[1,1]*n[0,1] + m[0,1]*n[1,1] + ((m[0,1] + n[0,1])*(m[1,0] + n[1,0]) - (m[0,0] - n[0,0])*(m[1,1] - n[1,1]))*z2)
         men.zo = z
-    elif men.sidetype == 'ADDON' and men.sideratio > 0:
+    elif men.c_type == 'ADDON' and men.c_ratio > 0:
         # this routine will not called until 'ADDON(LOOP)' type of connection is implemented 
-        input_impedance(wf,men.side)	
-        m = transmission_matrix(men.side,None)
+        input_impedance(wf,men.child)	
+        m = transmission_matrix(men.child,None)
 	    
         z1 = m[0,1]/(m[0,1]*m[1,0]-(1-m[0,0])*(1-m[1,1]))
         z2 = men.next.zi
-        if men.sideratio == 0:
+        if men.c_ratio == 0:
             men.zo = men.next.zi
-        elif men.sideratio == 1:
+        elif men.c_ratio == 1:
             men.zo = z1
         else:
-            z1 /= men.sideratio
-            z2 /= (1 - men.sideratio)	
+            z1 /= men.c_ratio
+            z2 /= (1 - men.c_ratio)	
             z = z1*z2/(z1+z2)
             men.zo = z
 

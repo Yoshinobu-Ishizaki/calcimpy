@@ -122,9 +122,9 @@ def men_by_kwd( cur, lst ):
     elif key == 'SPLIT' or key == 'TONEHOLE' or key == '|':
         men = Men( db, db, 0, gp, c_name = name, c_type = 'SPLIT', c_ratio = ratio )
     elif key == 'OPEN_END':
-        men = Men( db, db, 0 , gp )
+        men = Men( db, 0, 0 , gp )
     elif key == 'CLOSED_END':
-        men = Men( db, 0, 0, gp )
+        men = Men( 0, 0, 0, gp )
     else:
         pass
     
