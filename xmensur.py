@@ -10,17 +10,18 @@ xmensur core routine and handler functions
 
 class Men(object):
     """メンズール要素のクラス"""
-    def __init__(self, df = 0, db = 0, r = 0, group = None, prev = None, next = None, side = None, sidename = '', sidetype = None, sideratio = 1 ):
+    def __init__(self, df = 0, db = 0, r = 0, group = None, prev = None, next = None, child = None, c_name = '', c_type = None, c_ratio = 1 ):
         self.df = df
         self.db = db
         self.r = r
         self.group = group # 
         self.next = next # next Men
         self.prev = prev # prev Men
-        self.sidename = sidename # name of side men for searching later.
-        self.side = side # side Men ( BRANCH, MERGE, TONEHOLE )
-        self.sidetype = sidetype #BRANCH,MERGE,TONEHOLE ...
-        self.sideratio = sideratio # side conection ratio
+        self.parent = None
+        self.child = child # child Men ( BRANCH, MERGE, TONEHOLE )
+        self.c_name = c_name # name of child men for searching later.
+        self.c_type = c_type #BRANCH,MERGE,TONEHOLE ...
+        self.c_ratio = c_ratio # child connection ratio
         # below are calculated later
         self.pi = 0 # pressure at input end
         self.ui = 0 # volume verosity at input end
@@ -40,9 +41,10 @@ class Men(object):
         """Set prev Men."""
         self.prev = prev
     
-    def setside(self, side = None):
-        self.side = side
-        side.side = self
+    def setchild(self, child):
+        if child:
+            self.child = child
+            child.parent = self
         
     def get_fbr(self):
         return self.df, self.db, self.r 
@@ -114,11 +116,11 @@ def men_by_kwd( cur, lst ):
     men = None
     
     if key == 'BRANCH' or key == 'VALVE_OUT' or key == '<':
-        men = Men( db, db, 0, gp, sidename = name, sidetype = 'BRANCH', sideratio = ratio )
+        men = Men( db, db, 0, gp, c_name = name, c_type = 'BRANCH', c_ratio = ratio )
     elif key == 'MERGE' or key =='VALVE_IN' or key == '>':
-        men = Men( db, db, 0, gp, sidename = name, sidetype = 'MERGE', sideratio = ratio )
+        men = Men( db, db, 0, gp, c_name = name, c_type = 'MERGE', c_ratio = ratio )
     elif key == 'SPLIT' or key == 'TONEHOLE' or key == '|':
-        men = Men( db, db, 0, gp, sidename = name, sidetype = 'SPLIT', sideratio = ratio )
+        men = Men( db, db, 0, gp, c_name = name, c_type = 'SPLIT', c_ratio = ratio )
     elif key == 'OPEN_END':
         men = Men( db, db, 0 , gp )
     elif key == 'CLOSED_END':
@@ -146,40 +148,40 @@ def end_mensur(men):
 
 def joint_mensur(men):
     '''joint point of mensur which is BRANCH type'''
-    if men.sidetype == 'BRANCH':
-        e = end_mensur(men.side)
-        if e.side and e.side.sidetype == 'MERGE':
-            return e.side
+    if men.c_type == 'BRANCH':
+        e = end_mensur(men.child)
+        if e.parent and e.parent.c_type == 'MERGE':
+            return e.parent
         else:
             return None
     else:
         return None
 
 def resolve_child_mensur():
-    """Connect side mensur to Main"""
+    """Connect child mensur to Main"""
     men = men_grp_table['MAIN'] # top mensur cell
 
     while men:
-        if men.sidename != '':
-            if men.sidetype != 'MERGE':
-                ms = men_grp_table[men.sidename]
+        if men.c_name != '':
+            if men.c_type != 'MERGE':
+                ms = men_grp_table[men.c_name]
             else:
-                ms = end_mensur(men_grp_table[men.sidename])
+                ms = end_mensur(men_grp_table[men.c_name])
 
-            men.setside(ms)
+            men.setchild(ms)
         
         men = men.next
 
 def print_mensur(men):
     while men:
         print(men) # output __str__
-        if men.side:
-            if men.sidetype != 'MERGE' and men.sideratio > HALF:
-                men = men.side
-            elif not men.next: # branch end
-                men = men.side
+        if men.child:
+            if men.c_type != 'MERGE' and men.c_ratio > HALF:
+                men = men.child
             else:
                 men = men.next
+        elif men.parent and not men.next: # branch end
+            men = men.parent
         else:
             men = men.next
 

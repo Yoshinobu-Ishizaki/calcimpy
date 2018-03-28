@@ -87,7 +87,7 @@ def transmission_matrix(men1, men2):
 
     return m
 
-def handle_sidemensur(wf,men):
+def child_impedance(wf,men):
     '''handle impedance connection between side and current'''
     if men.side == None:
         return
@@ -175,6 +175,9 @@ def calc_transmission(wf,men):
     
 def calc_impedance(wf, men):
     '''calculate impedance and other data for a given mensur cell'''
+    if men.child:
+        child_impedance(wf,men)
+
     if men.r > 0:
         calc_transmission(wf,men) 
         men.zi = (men.tm[0,0]*men.zo + men.tm[0,1])/(men.tm[1,0]*men.zo + men.tm[1,1] ) 
