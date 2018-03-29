@@ -13,6 +13,14 @@ This is going to be new python programs written from scratch.
 
 1. [Loop impedance memo](doc/loop_impedance.nb.pdf) : Simple memo about impedance lcalculation of looped multi-column.
 
+## Sample and examples
+
+**sample/**
+Some simple sample XMEN files.
+
+**practice/**
+Example of calculation and its study (jupyter notebooks).
+
 ## Programs
 
 **calcimpy.py**
