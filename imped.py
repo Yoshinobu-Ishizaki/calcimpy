@@ -61,7 +61,7 @@ def radimp( wf, dia ):
             re = _rhoc0/s*(1 - special.jn(1,x)/x*2) # 1st order bessel function 
             im = _rhoc0/s*special.struve( 1,x )/x*2 # 1st order struve function
 
-            if rad_calc == 'BUFFLE':
+            if rad_calc == 'BAFFLE':
                 zr = re + im*1j
             elif rad_calc == 'PIPE':
                 # real is about 0.5 times and imaginary is 0.7 times when without frange
