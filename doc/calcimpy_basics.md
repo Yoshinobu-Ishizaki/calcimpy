@@ -22,6 +22,12 @@ Any spaces and tabs are ignored.
 
 Comment is inserted at any position starting with  '#' (same as Python).
 
+Unit is in mm. All calculation is done under SI unit system.
+
+Output is frequency(Hz), impedance(real), impedance(imaginary), magnitude (20Log10(abs(impedance))).
+
+Python's numeral and arithmetic notation such as '+-*/**', '1e-3' and assignment 'x = 10.2' can be used at any point except it conflict with pre-defined keywords.
+
 ### Basics
 
 Most simple air column is a tapered tube with starting diameter df, ending diameter db and length r.
