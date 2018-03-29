@@ -187,7 +187,13 @@ def calc_impedance(wf, men):
 
     calc_transmission(wf,men) 
     if men.r > 0:
-        men.zi = (men.tm[0,0]*men.zo + men.tm[0,1])/(men.tm[1,0]*men.zo + men.tm[1,1] ) 
+        if not np.isinf(men.zo):
+            men.zi = (men.tm[0,0]*men.zo + men.tm[0,1])/(men.tm[1,0]*men.zo + men.tm[1,1] ) 
+        else:
+            if men.tm[1,0] != 0:
+                men.zi = men.tm[0,0]/men.tm[1,0]
+            else:
+                men.zi = np.inf
     else:
         # length 0
         men.zi = men.zo

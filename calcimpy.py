@@ -18,11 +18,11 @@ if __name__ == "__main__" :
     # exec this as standalone program.
     parser = argparse.ArgumentParser(description='calcimpy : input impedance calculation for air column')
     parser.add_argument('-v', '--version', action = 'version', version='%(prog)s {}'.format(__version__))
-    parser.add_argument('-m', '--minfreq', default = '0.0', help = 'minimum frequency to calculate.')
-    parser.add_argument('-M', '--maxfreq', default = '2000.0', help = 'maximum frequency to calculate.')
-    parser.add_argument('-s','--stepfreq', default = '2.5', help = 'step frequency for calculation.')
-    parser.add_argument('-t','--temperature', default = '24.0', help = 'air temperature (celsius).')
-    parser.add_argument('-R','--radiation',choices = ['PIPE','BAFFLE','NONE'], default = 'PIPE', help = 'type of calculation of radiation.')
+    parser.add_argument('-m', '--minfreq', default = '0.0', help = 'minimum frequency to calculate, default 0 Hz.')
+    parser.add_argument('-M', '--maxfreq', default = '2000.0', help = 'maximum frequency to calculate, default 2000 Hz.')
+    parser.add_argument('-s','--stepfreq', default = '2.5', help = 'step frequency for calculation, default 2.5 Hz.')
+    parser.add_argument('-t','--temperature', default = '24.0', help = 'air temperature, default 24 celsius.')
+    parser.add_argument('-R','--radiation',choices = ['PIPE','BAFFLE','NONE'], default = 'PIPE', help = 'type of calculation of radiation, default PIPE.')
     parser.add_argument('-o','--output',default = '', help = 'output filename, stdout is used when "-"' )
     parser.add_argument('filepath')
 
@@ -62,9 +62,10 @@ if __name__ == "__main__" :
         print('freq,imp.real,imp.imag,imp.mag')
         for i in np.arange(nn,dtype = int):
             # output impedance density
-            imped.input_impedance(wff[i],mentop)
-            z = mentop.zi*s
-            if z != 0:
-                print(ff[i],',',np.real(z),',',np.imag(z),',',20*np.log10(np.abs(z)))
+            if wff[i] == 0:
+                # avoid 0 calculation
+                print('0,0,0,0')
             else:
-                print(ff[i],',0,0,0')
+                imped.input_impedance(wff[i],mentop)
+                z = mentop.zi*s
+                print(ff[i],',',np.real(z),',',np.imag(z),',',20*np.log10(np.abs(z)))
