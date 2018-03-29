@@ -112,7 +112,8 @@ def men_by_kwd( cur, lst ):
     key = lst[0]
     if len(lst) > 1:
         name = lst[1]
-    elif len(lst) > 2:
+    
+    if len(lst) > 2:
         ratio = resolve_vars(lst[2:3])[0]
 
     df,db,r = cur.get_fbr()
