@@ -13,7 +13,26 @@ This is going to be new python programs written from scratch.
 
 1. [Loop impedance memo](doc/loop_impedance.nb.pdf) : Simple memo about impedance lcalculation of looped multi-column.
 
+## Programs
+
+**calcimpy.py**
+CUI program for input impedance calculation of given XMEN file.
+
+**printmen.py**
+CUI program for printing XMEN file.
+Converting to L, D data can be done.
+
+**xmensur.py** 
+Module for handling XMEN file.
+
+**imped.py**
+Module for calculation subroutines.
+
 ## ChangeLog
+
+2018/03/29
+- added printmen.py
+- edited calcimpy_basics.md
 
 2018/03/28
 - calcimpy.py completed
