@@ -7,14 +7,14 @@ import numpy as np
 """
 xmensur core routine and handler functions
 """
-
 class Men(object):
     """メンズール要素のクラス"""
-    def __init__(self, df = 0, db = 0, r = 0, group = None, prev = None, next = None, child = None, c_name = '', c_type = None, c_ratio = 1 ):
+    def __init__(self, df = 0, db = 0, r = 0, comment = '', group = None, prev = None, next = None, child = None, c_name = '', c_type = None, c_ratio = 1 ):
         self.df = df
         self.db = db
         self.r = r
-        self.group = group # 
+        self.group = group # to be used inside 
+        self.comment = comment # comment string 
         self.next = next # next Men
         self.prev = prev # prev Men
         self.parent = None
@@ -23,14 +23,17 @@ class Men(object):
         self.c_type = c_type #BRANCH,MERGE,TONEHOLE ...
         self.c_ratio = c_ratio # child connection ratio
         # below are calculated later
+        # for impedance
+        self.tm = np.zeros((2,2),dtype = complex) # transmission matrix
+        self.zi = 0 # impedance at input end
+        self.zo = 0 # impedance at output end
+        # for pressure 
         self.pi = 0 # pressure at input end
         self.ui = 0 # volume verosity at input end
         self.po = 0 # pressure at output end
         self.uo = 0 # volume verosity at output end
-        self.zi = 0 # impedance at input end
-        self.zo = 0 # impedance at output end
+        # for printing total length 
         self.xL = 0 # total length from 1st mensur
-        self.tm = np.zeros((2,2),dtype = complex) # transmission matrix
 
     def append(self, next = None):
         """Append next Men to this."""
@@ -50,7 +53,7 @@ class Men(object):
         return self.df, self.db, self.r 
 
     def __str__(self):
-        return '%g,%g,%g,%s' % (self.df*1000, self.db*1000, self.r*1000, self.group)
+        return '%g,%g,%g,%s' % (self.df*1000, self.db*1000, self.r*1000, self.comment)
 
 
 # reserved words
@@ -172,20 +175,35 @@ def resolve_child_mensur():
         
         men = men.next
 
-def print_mensur(men):
+def print_mensur(men, main = False):
+    '''print mensur.
+    Print MAIN tag if main = True
+    '''
+    mychild = {}
+    if main:
+        print('MAIN')
     while men:
         print(men) # output __str__
         if men.child:
-            if men.c_type != 'MERGE' and men.c_ratio > HALF:
-                men = men.child
-            else:
-                men = men.next
-        elif men.parent and not men.next: # branch end
-            men = men.parent
-        else:
-            men = men.next
+            print(men.c_type,',',men.c_name,',',men.c_ratio)
+            if men.c_type != 'MERGE':
+                mychild[men.c_name] = men.child
 
+        men = men.next
+    if main:
+        print('END_MAIN')
 
+    for nm in mychild.keys():
+        print('\nGROUP,',nm)
+        print_mensur(mychild[nm]) # recursive call to child mensur
+        print('END_GROUP')
+
+def print_mensur_ld(men):
+    '''print mensur converted to L,D data.
+    Ignore showing SPLIT type because it is not connected straight forward.
+    '''
+    pass
+    
 def clear_mensur():
     """Cleans all global mensur list, table"""
     del mensur[:]
@@ -242,7 +260,11 @@ def build_mensur( lines ):
             else:
                 # normal df,db,r,cmt line
                 df,db,r = resolve_vars( wd[:3] ) # only df,db,r 
-                men = Men( df*0.001,db*0.001,r*0.001, group = gnm ) # create men 
+                if len(wd) > 3:
+                    cmt = ''.join(wd[3:])
+                else:
+                    cmt = ''
+                men = Men( df*0.001,db*0.001,r*0.001, comment = cmt, group = gnm ) # create men 
 
                 if not cur:
                     if group_tree[0] == 'MAIN':
