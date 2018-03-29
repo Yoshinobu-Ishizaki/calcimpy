@@ -52,7 +52,7 @@ def radimp( wf, dia ):
 
     if( wf > 0 ):
         if rad_calc == 'NONE':
-            return 0
+            return 0 # simple open end impedance
         else:
             s = dia*dia*np.pi/4.0
             k = wf/_c0
@@ -69,7 +69,7 @@ def radimp( wf, dia ):
         
             return zr
     else:
-        return 0
+        return np.inf # closed end
 
 def transmission_matrix(men1, men2):
     '''calculate transmission matrix from men2 -> men1
@@ -201,14 +201,8 @@ def input_impedance(wf, men):
 
     cur = xmensur.end_mensur(men)
     # end impedance
-    if cur.df > 0:
-        cur.zo = radimp(wf,cur.df)
-    else:
-        # closed end 
-        cur.zo = np.inf
+    cur.zo = radimp(wf,cur.df)
     
-    # cur.uo = cur.po/cur.zo
-
     while cur != men:
         calc_impedance(wf,cur)
         cur = cur.prev
