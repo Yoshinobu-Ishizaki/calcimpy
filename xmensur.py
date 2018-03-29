@@ -230,6 +230,8 @@ def build_mensur( lines ):
     """Parse text lines which read from mensur file,
     then build mensur objects.
     """
+    global group_tree, group_names
+
     cur = None # current mensur cell 
     gnm = '' # current group name
 
