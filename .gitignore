@@ -104,5 +104,3 @@ ENV/
 .DS_Store
 .vscode/
 
-# png
-*.png
