@@ -29,8 +29,8 @@ if __name__ == "__main__" :
 
         mentop = xmn.build_mensur( lines )
     
+        print('#',path)
         if not args.convert:
-            print('#',path)
             xmn.print_mensur(mentop,True)
         else:
             xmn.print_mensur_ld(mentop)

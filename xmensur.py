@@ -216,7 +216,27 @@ def print_mensur_ld(men):
     '''print mensur converted to L,D data.
     Ignore showing SPLIT type because it is not connected straight forward.
     '''
-    pass
+    print('L,D')
+    xL = 0.0
+    s = '0,0'
+    print(s)
+    while men:
+        ss = '{0:.3f},{1:.3f}'.format(xL*1000,men.df*1000)
+        if ss != s:
+            print(ss)
+            s = ss
+        xL += men.r
+        ss = '{0:.3f},{1:.3f}'.format(xL*1000,men.db*1000)
+        if ss != s:
+            print(ss)
+            s = ss
+
+        if men.child and men.c_type == 'BRANCH' and men.c_ratio > HALF:
+            men = men.child
+        elif men.child and men.c_type == 'MERGE' and men.c_ratio > HALF:
+            men = men.parent
+        else:
+            men = men.next
     
 def clear_mensur():
     """Cleans all global mensur list, table"""
