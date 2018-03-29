@@ -1,0 +1,10 @@
+# sub group mensur
+[
+10,10,500,
+INSERT, SUB
+OPEN_END
+]
+
+GROUP, SUB
+10,10,500,
+END_GROUP

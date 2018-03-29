@@ -63,7 +63,8 @@ class Men(object):
 # [ = MAIN, ] = END_MAIN
 # { = GROUP, } = END_GROUP
 
-type_keywords = ('SPLIT', 'VALVE_OUT', 'MERGE', 'VALVE_IN', 'TONEHOLE', 'BRANCH','OPEN_END', 'CLOSED_END', '<', '>', '|')
+type_keywords = ('SPLIT', 'VALVE_OUT', 'MERGE', 'VALVE_IN', 'TONEHOLE', 'BRANCH','OPEN_END', 'CLOSED_END',\
+'INSERT', '<', '>', '|','@')
 group_keywords = ('MAIN', 'END_MAIN', 'GROUP', 'END_GROUP', '[', ']', '{', '}')
 
 # default values
@@ -109,8 +110,9 @@ def men_by_kwd( cur, lst ):
     Returns new Men item.
     """
     key = lst[0]
-    if len(lst) > 2:
+    if len(lst) > 1:
         name = lst[1]
+    elif len(lst) > 2:
         ratio = resolve_vars(lst[2:3])[0]
 
     df,db,r = cur.get_fbr()
@@ -124,10 +126,12 @@ def men_by_kwd( cur, lst ):
         men = Men( db, db, 0, gp, c_name = name, c_type = 'MERGE', c_ratio = ratio )
     elif key == 'SPLIT' or key == 'TONEHOLE' or key == '|':
         men = Men( db, db, 0, gp, c_name = name, c_type = 'SPLIT', c_ratio = ratio )
+    elif key == 'INSERT' or key == '@':
+        men = Men( db, db, 0, c_name = name, c_type = 'INSERT', c_ratio = 1)
     elif key == 'OPEN_END':
-        men = Men( db, 0, 0 , gp )
+        men = Men( db, 0, 0 , '', group = gp )
     elif key == 'CLOSED_END':
-        men = Men( 0, 0, 0, gp )
+        men = Men( 0, 0, 0, '', group = gp )
     else:
         pass
     
@@ -166,12 +170,22 @@ def resolve_child_mensur():
 
     while men:
         if men.c_name != '':
-            if men.c_type != 'MERGE':
+            if men.c_type == 'INSERT':
+                # join child group to main trunc
+                men2 = men.next
                 ms = men_grp_table[men.c_name]
-            else:
-                ms = end_mensur(men_grp_table[men.c_name])
+                me = end_mensur(ms)
 
-            men.setchild(ms)
+                men.next = ms
+                ms.prev = men
+                me.next = men2
+                men2.prev = me
+            else:
+                if men.c_type == 'MERGE':
+                    ms = end_mensur(men_grp_table[men.c_name])
+                else:
+                    ms = men_grp_table[men.c_name]
+                men.setchild(ms)
         
         men = men.next
 
