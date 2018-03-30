@@ -19,7 +19,7 @@ if __name__ == "__main__" :
     parser.add_argument('-v', '--version', action = 'version', version='%(prog)s {}'.format(__version__))
     parser.add_argument('-f', '--freq', default = '440.0', help = 'frequency to calculate, default 440 Hz.')
     parser.add_argument('-p', '--pressure', default = '60.0', help = 'pressure at starting point, default 60dBSPL.')
-    parser.add_argument('-H', '--from_head', action = 'store_true', help = 'calculate from head if ture, default false.')
+    parser.add_argument('-T', '--from_tail', action = 'store_true', help = 'calculate from tail if true, default false.')
     parser.add_argument('-o','--output',default = '', help = 'output filename, stdout is used when "-"' )
     parser.add_argument('-s','--step',default = '1', help = 'slice mensur by step, default 1mm.' )
     
@@ -45,7 +45,7 @@ if __name__ == "__main__" :
         p = p0 * np.power(10.0, pdB/20.0 ) # dBSPL -> Pa
 
         # calc pressure from end position
-        imped.calc_pressure(wf,mentop,endp = p, from_head = args.from_head)
+        imped.calc_pressure(wf,mentop,endp = p, from_tail = args.from_tail)
 
         # set file output
         if args.output == '-':
@@ -60,6 +60,6 @@ if __name__ == "__main__" :
         sys.stdout = fout
 
         # print pressure
-        print('#{0}, freq: {1}(Hz), p: {2}(dBSPL), from_head: {3}'.format(path,args.freq,args.pressure, args.from_head))
+        print('#{0}, freq: {1}(Hz), p: {2}(dBSPL), from_tail: {3}'.format(path,args.freq,args.pressure, args.from_tail))
         xmensur.print_pressure(mentop)
     

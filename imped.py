@@ -219,12 +219,12 @@ def input_impedance(wf, men):
         cur = cur.prev
     calc_impedance(wf,men)
     
-def calc_pressure(wf, mensur, endp, from_head = False):
+def calc_pressure(wf, mensur, endp, from_tail = False):
     '''calculate pressure from end at wave frequency wf.
     input_impedance routine must be called before using this.
     branch and  
     '''
-    if from_head:
+    if not from_tail:
         men = mensur
         # closed end at head is supposed. not good for flute like instrument ?
         v = [ endp, 0.0 ]
