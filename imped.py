@@ -179,7 +179,9 @@ def calc_transmission(wf,men):
             men.tm[1,0] = 1j*s1*np.sin(x)/_rhoc0
     else:
         # length 0
-        men.tm = np.eye(2, dtype=complex)
+        # men.tm is initialized by Identity matrix
+        # men.tm = np.eye(2, dtype=complex)
+        pass 
     
 def calc_impedance(wf, men):
     '''calculate impedance and other data for a given mensur cell'''

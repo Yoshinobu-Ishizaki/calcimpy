@@ -24,7 +24,7 @@ class Men(object):
         self.c_ratio = c_ratio # child connection ratio
         # below are calculated later
         # for impedance
-        self.tm = np.zeros((2,2),dtype = complex) # transmission matrix
+        self.tm = np.eye(2,dtype = complex) # transmission matrix, default Identity
         self.zi = 0 # impedance at input end
         self.zo = 0 # impedance at output end
         # for pressure 
