@@ -26,6 +26,9 @@ Example of calculation and its study (jupyter notebooks).
 **calcimpy.py**
 CUI program for input impedance calculation of given XMEN file.
 
+**calcprs.py**
+CUI program for calculation of pressure along with mensur.
+
 **printmen.py**
 CUI program for printing XMEN file.
 Converting to L, D data can be done.
@@ -37,6 +40,10 @@ Module for handling XMEN file.
 Module for calculation subroutines.
 
 ## ChangeLog
+
+2018/03/30
+- calcprs.py added
+- practice files added
 
 2018/03/29
 - added printmen.py
