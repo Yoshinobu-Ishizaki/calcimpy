@@ -324,3 +324,11 @@ def build_mensur( lines ):
     # return topmost mensur
     return men_grp_table['MAIN']
 
+def read_mensur_file(path):
+    f = open(path,'r')
+    lns = f.readlines()
+    f.close()
+
+    men = build_mensur(lns)
+
+    return men
