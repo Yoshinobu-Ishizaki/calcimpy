@@ -38,12 +38,21 @@ class Men(object):
     def append(self, next = None):
         """Append next Men to this."""
         self.next = next
-        self.next.prepend(self)
+        if next:
+            next.prev = self
 
     def prepend(self, prev = None):
         """Set prev Men."""
         self.prev = prev
+        if prev:
+            prev.next = self
     
+    def insert_after(self, men):
+        '''insert men into between self and self.next'''
+        nn = self.next
+        self.append(men)
+        men.append(nn)
+
     def setchild(self, child):
         if child:
             self.child = child
@@ -213,6 +222,48 @@ def print_mensur(men, main = False):
         print_mensur(mychild[nm]) # recursive call to child mensur
         print('END_GROUP')
 
+def actual_next_mensur(men):
+    if men.child and men.c_type == 'BRANCH' and men.c_ratio > HALF:
+        mm = men.child
+    elif men.next:
+        mm = men.next
+    elif men.parent:
+        mm = men.parent
+    else:
+        mm = None
+
+    return mm
+
+def actual_prev_mensur(men):
+    if men.child and men.c_type == 'MERGE' and men.c_ratio > HALF:
+        mm = men.child
+    elif men.prev:
+        mm = men.prev
+    elif men.parent:
+        mm = men.parent
+    else:
+        mm = None
+    
+    return mm
+
+def slice_mensur(men, stp):
+    '''slice mensur with stp'''
+    if stp > 0:
+        while men:
+            if men.r > stp:
+                if men.db != men.df:
+                    db2 = (men.db - men.df)/men.r * stp + men.df
+                else:
+                    db2 = men.db
+                r2 = men.r - stp
+                nw = Men(db2,men.db, r2, group = men.group)
+                men.insert_after(nw)
+                # change self data
+                men.r = stp
+                men.db = db2
+
+            men = actual_next_mensur(men)
+
 def print_mensur_ld(men):
     '''print mensur converted to L,D data.
     Ignore showing SPLIT type because it is not connected straight forward.
@@ -232,13 +283,39 @@ def print_mensur_ld(men):
             print(ss)
             s = ss
 
-        if men.child and men.c_type == 'BRANCH' and men.c_ratio > HALF:
-            men = men.child
-        elif men.child and men.c_type == 'MERGE' and men.c_ratio > HALF:
-            men = men.parent
-        else:
-            men = men.next
-    
+        men = actual_next_mensur(men)
+
+# def calc_mensur_length(men):
+#     xL = 0.0
+#     while men:
+#         men.xL = xL
+#         xL += men.r
+#         men = actual_next_mensur(men)
+
+def print_pressure(men):
+    xL = 0.0
+    s = 'L,D,dBSPL'
+    print(s)
+    while men:
+        p = 20*np.log10(np.abs(men.pi)/2e-5)
+        ss = '{0:.3f},{1:.3f},{2:.3f}'.format(xL*1000,men.df*1000,p)
+        if s != ss:
+            print(ss)
+            s = ss
+        if men.child:
+            print('{0:.3f},0,{1:.3f}'.format(xL*1000,p))
+            print(ss)
+
+        xL += men.r
+        mm = actual_next_mensur(men)
+        if not mm:
+            # printout out pressure
+            ss = '{0:.3f},{1:.3f},{2:.3f}'.format(xL*1000,men.df*1000,20*np.log10(np.abs(men.po)/2e-5))
+            if s != ss:
+                print(ss)
+                s = ss
+        men = mm
+
 def clear_mensur():
     """Cleans all global mensur list, table"""
     del mensur[:]

@@ -31,7 +31,7 @@ if __name__ == "__main__" :
     path = args.filepath
     if path:
         #read mensur file here
-        mentop = read_mensur_file(path)
+        mentop = xmn.read_mensur_file(path)
     
         # set calculation conditions
         imped.set_params(temperature = float(args.temperature), minfreq = float(args.minfreq), \

@@ -50,7 +50,10 @@ def get_params():
 def radimp( wf, dia ):
     '''calculatio radiation impedance for each frequency'''
 
-    if( wf > 0 ):
+    if not wf > 0:
+        return 0
+
+    if dia > 0 :
         if rad_calc == 'NONE':
             return 0 # simple open end impedance
         else:
@@ -185,8 +188,8 @@ def calc_impedance(wf, men):
     elif men.next:
         men.zo = men.next.zi
 
-    calc_transmission(wf,men) 
     if men.r > 0:
+        calc_transmission(wf,men) 
         if not np.isinf(men.zo):
             men.zi = (men.tm[0,0]*men.zo + men.tm[0,1])/(men.tm[1,0]*men.zo + men.tm[1,1] ) 
         else:
@@ -214,3 +217,38 @@ def input_impedance(wf, men):
         cur = cur.prev
     calc_impedance(wf,men)
     
+def calc_pressure(wf, mensur, endp, from_head = False):
+    '''calculate pressure from end at wave frequency wf.
+    input_impedance routine must be called before using this.
+    branch and  
+    '''
+    if from_head:
+        men = mensur
+        # closed end at head is supposed. not good for flute like instrument ?
+        v = [ endp, 0.0 ]
+        while men:
+            men.pi = v[0]
+            men.ui = v[1]
+            ti = np.linalg.inv(men.tm)
+            v = np.dot(ti,v) # update v
+            men.po = v[0]
+            men.uo = v[1]
+
+            men = xmensur.actual_next_mensur(men)
+
+    else:
+        men = xmensur.end_mensur(mensur)
+        z = men.zo
+        if z == 0:
+            v = [0, endp/_rhoc0] # open end with no end correction
+        else:
+            v = [endp, endp/z]
+        while men:
+            men.po = v[0]
+            men.uo = v[1]
+            v = np.dot(men.tm,v) 
+            men.pi = v[0]
+            men.ui = v[1]
+
+            men = xmensur.actual_prev_mensur(men)
+
