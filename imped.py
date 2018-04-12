@@ -169,7 +169,7 @@ def calc_transmission(wf,men):
             men.tm[0,0] = ( r2*x*np.cos(x) -(r2-r1)*np.sin(x))/(r1*x)
             men.tm[0,1] = 1j*_rhoc0*np.sin(x)/(PI*r1*r2)
             men.tm[1,0] = -1j*PI*( (r2-r1)*(r2-r1)*x*np.cos(x) - \
-            ((r2-r1)*(r2-r1) + x*x*r1*r2 )*np.sin(x) )/(k*k*L*L*rhoc0)
+            ((r2-r1)*(r2-r1) + x*x*r1*r2 )*np.sin(x) )/(x*x*_rhoc0)
             men.tm[1,1] = ( r1*x*np.cos(x) + (r2-r1)*np.sin(x))/(r2*x)
         else:
             # straight
