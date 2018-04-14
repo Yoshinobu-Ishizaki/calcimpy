@@ -70,9 +70,4 @@ def main():
         fout.close()
 
 if __name__ == "__main__" :
-    if False:
-        # for time profiling
-        import cProfile
-        cProfile.run('main()', sort = 'time')
-    else:
         main()
