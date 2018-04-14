@@ -3,7 +3,7 @@
 calcimpy
 input impedance calculation program for air column ( wind instruments )
 '''
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 import argparse
 import sys
@@ -14,10 +14,6 @@ import pandas as pd
 
 import xmensur as xmn
 import imped
-
-# import pyximport
-# pyximport.install()
-# import impcore
 
 def main():
         # exec this as standalone program.
@@ -42,10 +38,6 @@ def main():
         imped.set_params(temperature = float(args.temperature), minfreq = float(args.minfreq), \
         maxfreq = float(args.maxfreq), stepfreq = float(args.stepfreq), rad = args.radiation )
         
-        # impcore.set_params(temperature = float(args.temperature), minfreq = float(args.minfreq), \
-        # maxfreq = float(args.maxfreq), stepfreq = float(args.stepfreq), rad = args.radiation )
-        
-
         # print(imped.get_params())
 
         nn = (imped._Mf - imped._mf)/imped._sf + 1
@@ -75,21 +67,11 @@ def main():
         dt['imp.mag'] = mg
 
         dt.to_csv(fout, index = False)
-        # print('freq,imp.real,imp.imag,imp.mag')
-        # for i in np.arange(nn,dtype = int):
-        #     # output impedance density
-        #     if wff[i] == 0:
-        #         # avoid 0 calculation
-        #         print('0,0,0,0')
-        #     else:
-        #         imped.input_impedance(wff[i],mentop)
-        #         z = mentop.zi*s
-        #         print(ff[i],',',np.real(z),',',np.imag(z),',',20*np.log10(np.abs(z)))
-
         fout.close()
 
 if __name__ == "__main__" :
     if False:
+        # for time profiling
         import cProfile
         cProfile.run('main()', sort = 'time')
     else:
