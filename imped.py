@@ -159,7 +159,7 @@ def child_impedance(wf,men):
                 z = z1*z2/(z1+z2)
             men.zo = z
 
-@jit(c16[:,:](f8,f8,f8,f8),nopython=True)
+@jit(c16[:,:](f8,f8,f8,f8),nopython=True, cache=True)
 def calc_transmission(wf, df, db, r):
     '''calculate transmission matrix for a given mensur cell
     always call with r > 0
@@ -192,7 +192,7 @@ def calc_transmission(wf, df, db, r):
     
     return tm
 
-@jit(c16(c16[:,:],c16), nopython = True)
+@jit(c16(c16[:,:],c16), nopython = True, cache=True)
 def zo2zi(tm, zo):
     if not np.isinf(zo):
         zi = (tm[0,0]*zo + tm[0,1])/(tm[1,0]*zo + tm[1,1] ) 
