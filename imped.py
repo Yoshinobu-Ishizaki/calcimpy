@@ -9,11 +9,8 @@ import xmensur
 import numpy as np
 from scipy import special 
 
-from numba import jit, c16, f8
-
-# import pyximport
-# pyximport.install()
-# import impcore
+# from numba import jit, c16, f8
+import impcore
 
 # constants
 PI = np.pi
@@ -159,50 +156,6 @@ def child_impedance(wf,men):
                 z = z1*z2/(z1+z2)
             men.zo = z
 
-@jit(c16[:,:](f8,f8,f8,f8),nopython=True, cache=True)
-def calc_transmission(wf, df, db, r):
-    '''calculate transmission matrix for a given mensur cell
-    always call with r > 0
-    '''
-    d = (df + db )*0.5
-    aa = (1+(GMM-1)/np.sqrt(PR))*np.sqrt(2*wf*_nu)/_c0/d # wall dumping factor
-    k = np.sqrt( (wf/_c0)*(wf/_c0 - 2*(-1+1j)*aa) ) # complex wave number including wall dumping
-    x = k * r
-    cc = np.cos(x)
-    ss = np.sin(x)
-
-    tm = np.empty((2,2),dtype = c16)
-
-    if df != db :
-        # taper
-        r1 = df*0.5
-        r2 = db*0.5
-        dr = r2-r1
-        
-        tm[0,0] = ( r2*x*cc -dr*ss)/(r1*x)
-        tm[0,1] = 1j*_rhoc0*ss/(PI*r1*r2)
-        tm[1,0] = -1j*PI*( dr*dr*x*cc - (dr*dr + x*x*r1*r2 )*ss )/(x*x*_rhoc0)
-        tm[1,1] = ( r1*x*cc + dr*ss)/(r2*x)
-    else:
-        # straight
-        s1 = PI/4*df*df
-        tm[0,0] = tm[1,1] = cc
-        tm[0,1] = 1j*_rhoc0*ss/s1
-        tm[1,0] = 1j*s1*ss/_rhoc0
-    
-    return tm
-
-@jit(c16(c16[:,:],c16), nopython = True, cache=True)
-def zo2zi(tm, zo):
-    if not np.isinf(zo):
-        zi = (tm[0,0]*zo + tm[0,1])/(tm[1,0]*zo + tm[1,1] ) 
-    else:
-        if tm[1,0] != 0:
-            zi = tm[0,0]/tm[1,0]
-        else:
-            zi = np.inf
-
-    return zi
 
 def calc_impedance(wf, men):
     '''calculate impedance and other data for a given mensur cell'''
@@ -212,8 +165,8 @@ def calc_impedance(wf, men):
         men.zo = men.next.zi
 
     if men.r > 0:
-        men.tm = calc_transmission(wf,men.df, men.db, men.r) 
-        men.zi = zo2zi(men.tm, men.zo)
+        men.tm = impcore.calc_transmission(wf,men.df, men.db, men.r, _c0, _rhoc0, _nu) 
+        men.zi = impcore.zo2zi(men.tm, men.zo)
     else:
         # length 0
         men.zi = men.zo
