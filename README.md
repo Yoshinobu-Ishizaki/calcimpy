@@ -4,6 +4,8 @@ Input impedance calculation for air column ( wind instrument ) by python.
 ## Plan
 This is going to be new python programs written from scratch.
 
+## Dependancy
+Python3, Numpy, Scipy, Pandas, Numba.
 
 ## Documentation
 
@@ -39,7 +41,13 @@ Module for handling XMEN file.
 **imped.py**
 Module for calculation subroutines.
 
+**impcore.py**
+Numba powered core routine for imped.py
+
 ## ChangeLog
+
+2018/04/15
+- speed up using numba (impcore.py)
 
 2018/03/30
 - calcprs.py added
