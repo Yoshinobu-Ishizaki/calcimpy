@@ -9,6 +9,12 @@ import xmensur
 import numpy as np
 from scipy import special 
 
+from numba import jit, c16, f8
+
+# import pyximport
+# pyximport.install()
+# import impcore
+
 # constants
 PI = np.pi
 PI2 = np.pi * 2.0
@@ -153,36 +159,51 @@ def child_impedance(wf,men):
                 z = z1*z2/(z1+z2)
             men.zo = z
 
-def calc_transmission(wf,men):
-    '''calculate transmission matrix for a given mensur cell'''
-    d = (men.df + men.db )*0.5
+@jit(c16[:,:](f8,f8,f8,f8),nopython=True)
+def calc_transmission(wf, df, db, r):
+    '''calculate transmission matrix for a given mensur cell
+    always call with r > 0
+    '''
+    d = (df + db )*0.5
     aa = (1+(GMM-1)/np.sqrt(PR))*np.sqrt(2*wf*_nu)/_c0/d # wall dumping factor
     k = np.sqrt( (wf/_c0)*(wf/_c0 - 2*(-1+1j)*aa) ) # complex wave number including wall dumping
-    x = k * men.r
+    x = k * r
+    cc = np.cos(x)
+    ss = np.sin(x)
 
-    if men.r > 0:
-        if men.df != men.db :
-            # taper
-            r1 = men.df*0.5
-            r2 = men.db*0.5
-            
-            men.tm[0,0] = ( r2*x*np.cos(x) -(r2-r1)*np.sin(x))/(r1*x)
-            men.tm[0,1] = 1j*_rhoc0*np.sin(x)/(PI*r1*r2)
-            men.tm[1,0] = -1j*PI*( (r2-r1)*(r2-r1)*x*np.cos(x) - \
-            ((r2-r1)*(r2-r1) + x*x*r1*r2 )*np.sin(x) )/(x*x*_rhoc0)
-            men.tm[1,1] = ( r1*x*np.cos(x) + (r2-r1)*np.sin(x))/(r2*x)
-        else:
-            # straight
-            s1 = PI/4*men.df*men.df
-            men.tm[0,0] = men.tm[1,1] = np.cos(x)
-            men.tm[0,1] = 1j*_rhoc0*np.sin(x)/s1
-            men.tm[1,0] = 1j*s1*np.sin(x)/_rhoc0
+    tm = np.empty((2,2),dtype = c16)
+
+    if df != db :
+        # taper
+        r1 = df*0.5
+        r2 = db*0.5
+        dr = r2-r1
+        
+        tm[0,0] = ( r2*x*cc -dr*ss)/(r1*x)
+        tm[0,1] = 1j*_rhoc0*ss/(PI*r1*r2)
+        tm[1,0] = -1j*PI*( dr*dr*x*cc - (dr*dr + x*x*r1*r2 )*ss )/(x*x*_rhoc0)
+        tm[1,1] = ( r1*x*cc + dr*ss)/(r2*x)
     else:
-        # length 0
-        # men.tm is initialized by Identity matrix
-        # men.tm = np.eye(2, dtype=complex)
-        pass 
+        # straight
+        s1 = PI/4*df*df
+        tm[0,0] = tm[1,1] = cc
+        tm[0,1] = 1j*_rhoc0*ss/s1
+        tm[1,0] = 1j*s1*ss/_rhoc0
     
+    return tm
+
+@jit(c16(c16[:,:],c16), nopython = True)
+def zo2zi(tm, zo):
+    if not np.isinf(zo):
+        zi = (tm[0,0]*zo + tm[0,1])/(tm[1,0]*zo + tm[1,1] ) 
+    else:
+        if tm[1,0] != 0:
+            zi = tm[0,0]/tm[1,0]
+        else:
+            zi = np.inf
+
+    return zi
+
 def calc_impedance(wf, men):
     '''calculate impedance and other data for a given mensur cell'''
     if men.child:
@@ -191,14 +212,8 @@ def calc_impedance(wf, men):
         men.zo = men.next.zi
 
     if men.r > 0:
-        calc_transmission(wf,men) 
-        if not np.isinf(men.zo):
-            men.zi = (men.tm[0,0]*men.zo + men.tm[0,1])/(men.tm[1,0]*men.zo + men.tm[1,1] ) 
-        else:
-            if men.tm[1,0] != 0:
-                men.zi = men.tm[0,0]/men.tm[1,0]
-            else:
-                men.zi = np.inf
+        men.tm = calc_transmission(wf,men.df, men.db, men.r) 
+        men.zi = zo2zi(men.tm, men.zo)
     else:
         # length 0
         men.zi = men.zo
@@ -210,6 +225,9 @@ def input_impedance(wf, men):
     # cur.po = 0.02 + 0j # 60dB(SPL) = 20*1e-6 * 10^(60/20)
     # does not need to calculate impedance
 
+    if wf == 0:
+        return 0
+
     cur = xmensur.end_mensur(men)
     # end impedance
     cur.zo = radimp(wf,cur.df)
@@ -218,6 +236,8 @@ def input_impedance(wf, men):
         calc_impedance(wf,cur)
         cur = cur.prev
     calc_impedance(wf,men)
+
+    return men.zi
     
 def calc_pressure(wf, mensur, endp, from_tail = False):
     '''calculate pressure from end at wave frequency wf.
@@ -253,4 +273,5 @@ def calc_pressure(wf, mensur, endp, from_tail = False):
             men.ui = v[1]
 
             men = xmensur.actual_prev_mensur(men)
+
 

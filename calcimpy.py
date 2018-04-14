@@ -5,17 +5,22 @@ input impedance calculation program for air column ( wind instruments )
 '''
 __version__ = '1.0.0'
 
-import xmensur as xmn
-import imped
-
 import argparse
 import sys
 import os.path
 
 import numpy as np
+import pandas as pd
 
-if __name__ == "__main__" :
-    # exec this as standalone program.
+import xmensur as xmn
+import imped
+
+# import pyximport
+# pyximport.install()
+# import impcore
+
+def main():
+        # exec this as standalone program.
     parser = argparse.ArgumentParser(description='calcimpy : input impedance calculation for air column')
     parser.add_argument('-v', '--version', action = 'version', version='%(prog)s {}'.format(__version__))
     parser.add_argument('-m', '--minfreq', default = '0.0', help = 'minimum frequency to calculate, default 0 Hz.')
@@ -36,6 +41,10 @@ if __name__ == "__main__" :
         # set calculation conditions
         imped.set_params(temperature = float(args.temperature), minfreq = float(args.minfreq), \
         maxfreq = float(args.maxfreq), stepfreq = float(args.stepfreq), rad = args.radiation )
+        
+        # impcore.set_params(temperature = float(args.temperature), minfreq = float(args.minfreq), \
+        # maxfreq = float(args.maxfreq), stepfreq = float(args.stepfreq), rad = args.radiation )
+        
 
         # print(imped.get_params())
 
@@ -53,15 +62,35 @@ if __name__ == "__main__" :
         else:
             fout = open(args.output,'w') 
 
-        sys.stdout = fout
         s = mentop.df*mentop.df*np.pi/4 # section area 
-        print('freq,imp.real,imp.imag,imp.mag')
-        for i in np.arange(nn,dtype = int):
-            # output impedance density
-            if wff[i] == 0:
-                # avoid 0 calculation
-                print('0,0,0,0')
-            else:
-                imped.input_impedance(wff[i],mentop)
-                z = mentop.zi*s
-                print(ff[i],',',np.real(z),',',np.imag(z),',',20*np.log10(np.abs(z)))
+        zz = [s * imped.input_impedance(frq,mentop) for frq in wff]
+        zr = np.real(zz)
+        zi = np.imag(zz)
+        mg = [0 if z == 0 else 20*np.log10(np.abs(z)) for z in zz]
+
+        dt = pd.DataFrame()
+        dt['freq'] = ff
+        dt['imp.real'] = zr
+        dt['imp.imag'] = zi
+        dt['imp.mag'] = mg
+
+        dt.to_csv(fout, index = False)
+        # print('freq,imp.real,imp.imag,imp.mag')
+        # for i in np.arange(nn,dtype = int):
+        #     # output impedance density
+        #     if wff[i] == 0:
+        #         # avoid 0 calculation
+        #         print('0,0,0,0')
+        #     else:
+        #         imped.input_impedance(wff[i],mentop)
+        #         z = mentop.zi*s
+        #         print(ff[i],',',np.real(z),',',np.imag(z),',',20*np.log10(np.abs(z)))
+
+        fout.close()
+
+if __name__ == "__main__" :
+    if False:
+        import cProfile
+        cProfile.run('main()', sort = 'time')
+    else:
+        main()
