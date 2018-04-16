@@ -1,7 +1,6 @@
 """
 xmensur core routine and handler functions
 """
-
 import re
 import numpy as np
 
@@ -35,14 +34,15 @@ class Men(object):
         # for printing total length
         self.xL = 0  # total length from 1st mensur
 
+    @property
     def append(self, next=None):
         self.next = next
-        if next:
+        if next is not None:
             next.prev = self
 
     def prepend(self, prev=None):
         self.prev = prev
-        if prev:
+        if prev is not None:
             prev.next = self
 
     def insert_after(self, men):
