@@ -58,6 +58,6 @@ if __name__ == "__main__":
         sys.stdout = fout
 
         # print pressure
-        print('#{0}, freq: {1}(Hz), p: {2}(dBSPL), from_tail: {3}'.format(path,
-                                                                          args.freq, args.pressure, args.from_tail))
+        print('#{0}, freq: {1}(Hz), p: {2}(dBSPL), from_tail: {3}'.format(
+               path, args.freq, args.pressure, args.from_tail))
         xmensur.print_pressure(mentop)

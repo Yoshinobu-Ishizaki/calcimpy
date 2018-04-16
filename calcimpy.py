@@ -1,6 +1,6 @@
 """
 calcimpy
-input impedance calculation program for air column ( wind instruments )
+Input impedance calculation program for air column ( wind instruments ).
 """
 import argparse
 import sys
